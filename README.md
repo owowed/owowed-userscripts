@@ -28,4 +28,4 @@ If you have any ideas for new userscripts or improvements to existing ones, feel
 
 ## License
 
-Each userscript in this repository has its own license, which is specified in the file next to the `@license` directive.
+Each userscript in this repository has its own license, which is specified in the file next to the `@license` directive. Most of the userscripts are licensed under the [GNU LGPL-3.0](https://www.gnu.org/licenses/lgpl-3.0.en.html), a free and open-source license.
