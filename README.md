@@ -9,7 +9,7 @@ To use any of the userscripts in this repository, you'll need a userscript manag
 - [Violentmonkey](https://violentmonkey.github.io/)
 - [Greasemonkey](https://www.greasespot.net/)
 
-Once you have a userscript manager installed, choose one of the userscript available below under [Available Userscripts][available-userscripts], and simply click the `Install` button. Your userscript manager should automatically detect the file and prompt you to install it.
+Once you have a userscript manager installed, choose one of the userscript available below under [Available Userscripts](#available-userscripts), and simply click the `Install` button. Your userscript manager should automatically detect the file and prompt you to install it.
 
 ## Available Userscripts
 
