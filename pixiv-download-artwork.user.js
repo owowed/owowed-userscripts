@@ -1,15 +1,19 @@
 // ==UserScript==
-// @name        Pixiv Download Artwork
-// @description A userscript that adds a button, that can download the current artwork, with customizable filename.
-// @version     1.0.0
-// @namespace   owowed.moe
-// @author      owowed <island@owowed.moe>
-// @match       *://www.pixiv.net/*/artworks/*
-// @require     https://github.com/owowed/userscript-common/raw/main/mutation-observer.js
-// @require     https://github.com/owowed/userscript-common/raw/main/wait-for-element.js
-// @grant       GM_addStyle
-// @grant       GM_download
-// @license     LGPL-3.0
+// @name         Pixiv Download Artwork
+// @description  A userscript that adds a button, that can download the current artwork, with customizable filename.
+// @version      1.0.0
+// @namespace    owowed.moe
+// @author       owowed <island@owowed.moe>
+// @homepage     https://github.com/owowed/owowed-userscripts
+// @supportURL   https://github.com/owowed/owowed-userscripts/issues
+// @match        *://www.pixiv.net/*/artworks/*
+// @require      https://github.com/owowed/userscript-common/raw/main/mutation-observer.js
+// @require      https://github.com/owowed/userscript-common/raw/main/wait-for-element.js
+// @grant        GM_addStyle
+// @grant        GM_download
+// @license      LGPL-3.0
+// @updateURL    https://github.com/owowed/owowed-userscripts/raw/main/pixiv-download-artwork.user.js
+// @downloadURL  https://github.com/owowed/owowed-userscripts/raw/main/pixiv-download-artwork.user.js
 // ==/UserScript==
 
 /* --- CONFIG STARTS HERE --- */

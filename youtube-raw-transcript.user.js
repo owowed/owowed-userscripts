@@ -4,11 +4,15 @@
 // @version      1.0.0
 // @namespace    owowed.moe
 // @author       owowed <island@owowed.moe>
+// @homepage     https://github.com/owowed/owowed-userscripts
+// @supportURL   https://github.com/owowed/owowed-userscripts/issues
 // @match        *://www.youtube.com/*
 // @require      https://github.com/owowed/userscript-common/raw/main/mutation-observer.js
 // @require      https://github.com/owowed/userscript-common/raw/main/wait-for-element.js
 // @grant        GM_addStyle
 // @license      LGPL-3.0
+// @updateURL    https://github.com/owowed/owowed-userscripts/raw/main/youtube-raw-transcript.user.js
+// @downloadURL  https://github.com/owowed/owowed-userscripts/raw/main/youtube-raw-transcript.user.js
 // ==/UserScript==
 
 // replace "document.isRTSDebug = false;" to "document.isRTSDebug = true;", to enable debug mode (console logging)
