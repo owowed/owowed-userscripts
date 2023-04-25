@@ -13,8 +13,8 @@ Once you have a userscript manager installed, simply click on the userscript fil
 
 ## Available Userscripts
 
-- **YouTube Raw Transcript**: This userscript will add clickable button in the transcript panel that can generate a raw video transcript. License: LGPL-3.0.
-- **Pixiv Download Artwork**: Add download artwork button, with custom filename format. License: LGPL-3.0.
+- **YouTube Raw Transcript**: A userscript that adds a button in the video's transcript panel, with the functionality of generating a raw video transcript you can copy-paste. License: LGPL-3.0.
+- **Pixiv Download Artwork**: A userscript that adds a button, that can download the current artwork, with customizable filename. License: LGPL-3.0.
 
 ## Contributing
 
