@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Pixiv Download Artwork
-// @description Add download artwork button, with custom filename format.
+// @description A userscript that adds a button, that can download the current artwork, with customizable filename.
 // @version     1.0.0
 // @namespace   owowed.moe
 // @author      owowed <island@owowed.moe>
