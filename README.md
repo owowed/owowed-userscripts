@@ -13,8 +13,12 @@ Once you have a userscript manager installed, simply click on the userscript fil
 
 ## Available Userscripts
 
-- **YouTube Raw Transcript**: A userscript that adds a button in the video's transcript panel, with the functionality of generating a raw video transcript you can copy-paste. License: LGPL-3.0. [Install](https://github.com/owowed/owowed-userscripts/raw/main/youtube-raw-transcript.user.js)
-- **Pixiv Download Artwork**: A userscript that adds a button, that can download the current artwork, with customizable filename. License: LGPL-3.0. [Install](https://github.com/owowed/owowed-userscripts/raw/main/pixiv-download-artwork.user.js)
+- **YouTube Raw Transcript** ([Install][ytrt-install], [LGPL-3.0][LGPL3]): A userscript that adds a button in the video's transcript panel, with the functionality of generating a raw video transcript you can copy-paste.
+- **Pixiv Download Artwork** ([Install][pda-install], [LGPL-3.0][LGPL3]): A userscript that adds a button, that can download the current artwork, with customizable filename.
+
+[LGPL3]: https://github.com/owowed/owowed-userscripts/raw/main/LICENSE.LGPL-3.txt
+[ytrt-install]: https://github.com/owowed/owowed-userscripts/raw/main/youtube-raw-transcript.user.js
+[pda-install]: https://github.com/owowed/owowed-userscripts/raw/main/pixiv-download-artwork.user.js
 
 ## Contributing
 
