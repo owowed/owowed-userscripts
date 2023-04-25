@@ -14,10 +14,12 @@ Once you have a userscript manager installed, choose one of the userscript avail
 ## Available Userscripts
 
 - **YouTube Raw Transcript** ([Install][ytrt-install], [LGPL-3.0][LGPL3]): A userscript that adds a button in the video's transcript panel, with the functionality of generating a raw video transcript you can copy-paste.
+- **YouTube Preview Handle** ([Install][ytph-install], [LGPL-3.0][LGPL3]): A userscript that will add a YouTube username handle on the right side of a channel name. Will work across video channel name, homepage, YouTube post, and more.
 - **Pixiv Download Artwork** ([Install][pda-install], [LGPL-3.0][LGPL3]): A userscript that adds a button, that can download the current artwork, with customizable filename.
 
 [LGPL3]: https://github.com/owowed/owowed-userscripts/raw/main/LICENSE.LGPL-3.txt
 [ytrt-install]: https://github.com/owowed/owowed-userscripts/raw/main/youtube-raw-transcript.user.js
+[ytph-install]: https://github.com/owowed/owowed-userscripts/raw/main/youtube-preview-handle.user.js
 [pda-install]: https://github.com/owowed/owowed-userscripts/raw/main/pixiv-download-artwork.user.js
 
 ## Contributing
