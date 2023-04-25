@@ -24,7 +24,7 @@ void function main() {
         width: auto;
         overflow: unset;
     }
-    ytd-channel-name ytd-badge-supported-renderer[hidden] + .ohandle {
+    ytd-channel-name ytd-badge-supported-renderer[hidden] + .oxi-handle {
         margin-left: 5px;
     }
 
@@ -35,17 +35,17 @@ void function main() {
     .ytd-preview-handle ytd-backstage-post-renderer #author-text {
         white-space: nowrap;
     }
-    ytd-backstage-post-renderer .ohandle {
+    ytd-backstage-post-renderer .oxi-handle {
         line-height: 1.8rem;
         margin-right: 5px;
     }
 
     :where(
-        #author-text .ohandle,
-        ytd-post-renderer .ohandle,
-        ytd-backstage-post-renderer .ohandle,
-        ytd-comment-renderer .ohandle,
-        #channel-info > .ohandle
+        #author-text .oxi-handle,
+        ytd-post-renderer .oxi-handle,
+        ytd-backstage-post-renderer .oxi-handle,
+        ytd-comment-renderer .oxi-handle,
+        #channel-info > .oxi-handle
     ) {
         margin: 0 4px 0 0;
         text-overflow: ellipsis;
@@ -54,24 +54,24 @@ void function main() {
         font-size: 1.2rem;
     }
 
-    #channel-info > .ohandle {
+    #channel-info > .oxi-handle {
         margin: 2px 0;
     }
     #channel-info > #title {
         margin-bottom: 0;
     }
     
-    .yt-preview-handle .ohandle,
-    ytd-channel-name a.ohandle.yt-simple-endpoint,
-    ytd-comment-renderer a.ohandle.yt-simple-endpoint.yt-formatted-string {
+    .yt-preview-handle .oxi-handle,
+    ytd-channel-name a.oxi-handle.yt-simple-endpoint,
+    ytd-comment-renderer a.oxi-handle.yt-simple-endpoint.yt-formatted-string {
         color: var(--yt-spec-text-secondary) !important;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
     }
-    :is(.yt-preview-handle .ohandle,
-    ytd-channel-name .ohandle,
-    ytd-comment-renderer .ohandle):hover {
+    :is(.yt-preview-handle .oxi-handle,
+    ytd-channel-name .oxi-handle,
+    ytd-comment-renderer .oxi-handle):hover {
         filter: brightness(1.4) !important;
     }
     `);
@@ -141,7 +141,7 @@ class HandlePatcher {
 
     initHandleElement() {
         this.handleElement = document.createElement("a");
-        this.handleElement.className = "ohandle yt-simple-endpoint style-scope yt-formatted-string";
+        this.handleElement.className = "oxi-handle yt-simple-endpoint style-scope yt-formatted-string";
         this.updateHandleElement("...", ".");
     }
 

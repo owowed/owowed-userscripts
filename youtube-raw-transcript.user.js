@@ -67,7 +67,7 @@ let attachedElements = [];
 
 {
     GM_addStyle(`
-    #otwd-raw-transcript-button {
+    #oxi-raw-transcript-button {
         background-color: var(--yt-spec-badge-chip-background);
         padding: 6px 10px;
         border: none;
@@ -76,10 +76,10 @@ let attachedElements = [];
         font-family: "Roboto","Arial",sans-serif;
         cursor: pointer;
     }
-    #otwd-raw-transcript-button:hover {
+    #oxi-raw-transcript-button:hover {
         backdrop-filter: brightness(1.4);
     }
-    #otwd-raw-transcript-button:active {
+    #oxi-raw-transcript-button:active {
         backdrop-filter: brightness(1.8);
     }
     ytd-transcript-search-panel-renderer > #header {
@@ -262,7 +262,7 @@ function attachRawTranscriptButton({ transcriptRenderer }) {
     const panelHeader = transcriptRenderer.querySelector("ytd-transcript-search-panel-renderer #header");
     const rawTranscriptButton = document.createElement("button");
 
-    rawTranscriptButton.id = "otwd-raw-transcript-button";
+    rawTranscriptButton.id = "oxi-raw-transcript-button";
     rawTranscriptButton.textContent = "Raw Transcript";
     rawTranscriptButton.title = "Generate raw transcript. Raw transcript will be written in the textbox below the transcript panel."
 
@@ -284,7 +284,7 @@ function attachRawTranscriptTextArea({ transcriptPanel, transcriptRenderer }) {
     debugLog("attach-transcript-textarea", "transcript textarea attaching...", { transcriptPanel, transcriptRenderer })
     const textarea = document.createElement("textarea");
 
-    textarea.id = "otwd-raw-transcript-textarea";
+    textarea.id = "oxi-raw-transcript-textarea";
     textarea.rows = 20;
     textarea.placeholder = "(raw transcript will be written here)";
 
