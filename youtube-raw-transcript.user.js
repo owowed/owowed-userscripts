@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Youtube Raw Transcript
 // @description  A userscript that adds a button in the video's transcript panel, with the functionality of generating a raw video transcript you can copy-paste.
-// @version      1.0.0
+// @version      1.0.1
 // @namespace    owowed.moe
 // @author       owowed <island@owowed.moe>
 // @homepage     https://github.com/owowed/owowed-userscripts
@@ -112,7 +112,7 @@ let attachedElements = [];
                 panels = await waitForElement(
                     "#secondary #panels",
                     { noTimeout: true,
-                        signal: pageNavigateAbortController.signal });
+                        abortSignal: pageNavigateAbortController.signal });
                 debugLog("event-watch-page", "got panels", { panels })
                 makeMutationObserver({
                     target: panels,
@@ -140,14 +140,14 @@ let attachedElements = [];
                 transcriptPanel = await waitForElementByParent(
                     panels, `:scope > [target-id$="transcript"]`,
                     { noTimeout: true,
-                        signal: transcriptPanelAbortController.signal });
+                        abortSignal: transcriptPanelAbortController.signal });
                 debugLog("event-watch-page", "got transcriptPanel", { transcriptPanel })
 
                 let transcriptRenderer;
 
                 makeMutationObserver(
                     { target: transcriptPanel,
-                        signal: transcriptPanelAbortController.signal,
+                        abortSignal: transcriptPanelAbortController.signal,
                         attributes: true,
                         attributeFilter: ["visibility", "target-id"] },
                     ({ records, observer }) => {
@@ -188,19 +188,19 @@ let attachedElements = [];
                     if (!transcriptRenderer) {
                         transcriptRenderer = await waitForElementByParent(
                             transcriptPanel, "ytd-transcript-renderer",
-                            { noTimeout: true, signal: transcriptPanelAbortController.signal });
+                            { noTimeout: true, abortSignal: transcriptPanelAbortController.signal });
                     }
 
                     attachElements({ transcriptPanel, transcriptRenderer });
 
                     const searchPanel = await waitForElementByParent(
                         transcriptRenderer, "ytd-transcript-search-panel-renderer > #header", 
-                        { noTimeout: true, signal: transcriptPanelAbortController.signal });
+                        { noTimeout: true, abortSignal: transcriptPanelAbortController.signal });
                     
                     makeMutationObserver(
                         { target: searchPanel,
                             childList: true,
-                            signal: pageNavigateAbortController.signal },
+                            abortSignal: pageNavigateAbortController.signal },
                         ({ records }) => {
                             const target = records[0].target;
                             if (target.querySelector("#header > ytd-transcript-search-box-renderer")) {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Youtube Preview Handle
 // @description  A userscript that will add/preview YouTube username handle on the right side of a YouTube channel name. Will work across video channel name, homepage, YouTube post, and more.
-// @version      1.0.0
+// @version      1.0.1
 // @namespace    owowed.moe
 // @author       owowed <island@owowed.moe>
 // @homepage     https://github.com/owowed/owowed-userscripts
@@ -157,7 +157,7 @@ class HandlePatcher {
             target: this.anchor,
             attributes: true,
             attributeFilter: ["href"],
-            signal: this.observerAbortController.signal
+            abortSignal: this.observerAbortController.signal
         }, () => this.update());
     }
 
@@ -234,7 +234,7 @@ async function getHandleFromChannelPage(href) {
     const controller = new AbortController();
     const fetchOptions = {
         transformStream: i => i.pipeThrough(new TextDecoderStream()),
-        signal: controller.signal
+        abortSignal: controller.signal
     };
 
     let accumulatedText = "";
@@ -254,8 +254,8 @@ async function getHandleFromChannelPage(href) {
     }
 }
 
-async function* fetchChunks(url, { transformStream, signal, ...fetchOptions } = {}) {
-    const response = await fetch(url, { signal, ...fetchOptions });
+async function* fetchChunks(url, { transformStream, abortSignal, ...fetchOptions } = {}) {
+    const response = await fetch(url, { signal: abortSignal, ...fetchOptions });
 
     if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -265,7 +265,7 @@ async function* fetchChunks(url, { transformStream, signal, ...fetchOptions } = 
     
     try {
         while (true) {
-            signal?.throwIfAborted();
+            abortSignal?.throwIfAborted();
 
             const { done, value } = await reader.read();
             
