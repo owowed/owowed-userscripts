@@ -7,7 +7,7 @@
 // @homepage     https://github.com/owowed/owowed-userscripts
 // @supportURL   https://github.com/owowed/owowed-userscripts/issues
 // @match        *://www.youtube.com/*
-// @require      https://github.com/owowed/userscript-common/raw/main/base-error.js
+// @require      https://github.com/owowed/userscript-common/raw/main/common.js
 // @require      https://github.com/owowed/userscript-common/raw/main/mutation-observer.js
 // @require      https://github.com/owowed/userscript-common/raw/main/wait-for-element.js
 // @grant        GM_addStyle
