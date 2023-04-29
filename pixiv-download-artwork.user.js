@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         Pixiv Download Artwork
 // @description  A userscript that adds a button, that can download the current artwork, with customizable filename.
-// @version      1.0.1
+// @version      1.0.2
 // @namespace    owowed.moe
 // @author       owowed <island@owowed.moe>
 // @homepage     https://github.com/owowed/owowed-userscripts
 // @supportURL   https://github.com/owowed/owowed-userscripts/issues
 // @match        *://www.pixiv.net/*/artworks/*
+// @match        *://www.pixiv.net/*
 // @require      https://github.com/owowed/userscript-common/raw/main/common.js
 // @require      https://github.com/owowed/userscript-common/raw/main/mutation-observer.js
 // @require      https://github.com/owowed/userscript-common/raw/main/wait-for-element.js
@@ -16,6 +17,11 @@
 // @updateURL    https://github.com/owowed/owowed-userscripts/raw/main/pixiv-download-artwork.user.js
 // @downloadURL  https://github.com/owowed/owowed-userscripts/raw/main/pixiv-download-artwork.user.js
 // ==/UserScript==
+
+/*
+    "@match *://www.pixiv.net/*" is for adding download for user who navigated from pixiv homepage to pixiv artwork page
+    pixiv changes their webpage by javascript, not by redirecting to a new page
+*/
 
 /* --- CONFIG STARTS HERE --- */
 
@@ -112,14 +118,10 @@ function formatFilename(filename, formatData) {
     return filename;
 }
 
-function dbg(...obj) {
-    console.debug(...obj)
-    return obj.at(-1)
-}
-
 async function addDownloadButton() {
     const artworkTitleElem = await waitForElement("figcaption:has(footer) h1");
     const downloadBtn = document.createElement("button");
+
     downloadBtn.id = "oxi-artwork-download-btn";
     downloadBtn.textContent = "Download Artwork";
     downloadBtn.addEventListener("click", async () => {
@@ -131,16 +133,37 @@ async function addDownloadButton() {
             headers: {
                 Referer: "https://www.pixiv.net/"
             }
-        })
+        });
     });
-    dbg(artworkTitleElem)
+
     setTimeout(() => {
         artworkTitleElem.insertAdjacentElement("beforebegin", downloadBtn);
-        dbg(downloadBtn)
-    }, 1000)
+    }, 1000);
     return downloadBtn;
 }
 
-void function main() {
-    addDownloadButton();
+function dbg(...obj) {
+    console.debug(GM_info.name, ...obj)
+    return obj.at(-1)
+}
+
+void async function main() {
+    const charcoal = await waitForElement(".charcoal-token");
+    const charcoalpage = await waitForElementByParent(charcoal, ":scope > div");
+
+    /*
+        this "charcoalpage" element contains the "header" and "main content"
+        the "main content" gets replaced by other element whether the user navigate to other pages
+    */
+ 
+    // this function checks if user navigates to other page when the "main content" (or any other elements inside "charcoalpage") gets replaced
+    makeMutationObserver({ target: charcoalpage, childList: true }, () => {
+        if (window.location.href.includes("/artworks/")) {
+            addDownloadButton();
+        }
+    });
+
+    if (window.location.href.includes("/artworks/")) {
+        addDownloadButton();
+    }
 }();
