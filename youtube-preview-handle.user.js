@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Youtube Preview Handle
 // @description  A userscript that will add/preview YouTube username handle on the right side of a YouTube channel name. Will work across video channel name, homepage, YouTube post, and more.
-// @version      1.0.1
+// @version      1.0.2
 // @namespace    owowed.moe
 // @author       owowed <island@owowed.moe>
 // @homepage     https://github.com/owowed/owowed-userscripts
@@ -230,7 +230,19 @@ function getHandleFromHref(href) {
     else return href;
 }
 
+const HANDLE_CACHE = {};
+
 async function getHandleFromChannelPage(href) {
+    // Checking cache first if channel's handle is already fetched
+
+    const channelId = href.split("/channel/")[1];
+
+    if (HANDLE_CACHE[channelId] != undefined) {
+        return HANDLE_CACHE[channelId];
+    }
+
+    // do the thing
+
     const controller = new AbortController();
     const fetchOptions = {
         transformStream: i => i.pipeThrough(new TextDecoderStream()),
@@ -245,20 +257,29 @@ async function getHandleFromChannelPage(href) {
         const splitText = accumulatedText.split(/ytInitialData ?=/)[1];
 
         if (splitText?.includes(";</script>")) {
+            controller.abort();
             const ytInitialDataStr = splitText.split(";</script>")[0];       
             const ytInitialData = JSON.parse(ytInitialDataStr);
-            controller.abort();
 
-            return getHandleFromHref(ytInitialData.metadata.channelMetadataRenderer.vanityChannelUrl);
+            const handle = getHandleFromHref(ytInitialData.metadata.channelMetadataRenderer.vanityChannelUrl);
+            HANDLE_CACHE[channelId] = handle;
+
+            return handle;
         }
     }
 }
 
-async function* fetchChunks(url, { transformStream, abortSignal, ...fetchOptions } = {}) {
+async function* fetchChunks(url, { transformStream = i => i, abortSignal, ...fetchOptions } = {}) {
     const response = await fetch(url, { signal: abortSignal, ...fetchOptions });
 
     if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        throw new Error(`HTTP error! Status: ${response.status}`, {
+            cause: {
+                type: "HttpError",
+                statusText: response.statusText,
+                status: response.status
+            }
+        });
     }
     
     const reader = transformStream(response.body).getReader();
