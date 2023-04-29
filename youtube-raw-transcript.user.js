@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Youtube Raw Transcript
 // @description  A userscript that adds a button in the video's transcript panel, with the functionality of generating a raw video transcript you can copy-paste.
-// @version      1.0.2
+// @version      1.0.3
 // @namespace    owowed.moe
 // @author       owowed <island@owowed.moe>
 // @homepage     https://github.com/owowed/owowed-userscripts
