@@ -112,7 +112,7 @@ let attachedElements = [];
             if (!panels) {
                 panels = await waitForElement(
                     "#secondary #panels",
-                    { noTimeout: true,
+                    { enableTimeout: false,
                         abortSignal: pageNavigateAbortController.signal });
                 debugLog("event-watch-page", "got panels", { panels })
                 makeMutationObserver({
@@ -140,7 +140,7 @@ let attachedElements = [];
 
                 transcriptPanel = await waitForElementByParent(
                     panels, `:scope > [target-id$="transcript"]`,
-                    { noTimeout: true,
+                    { enableTimeout: false,
                         abortSignal: transcriptPanelAbortController.signal });
                 debugLog("event-watch-page", "got transcriptPanel", { transcriptPanel })
 
@@ -189,14 +189,14 @@ let attachedElements = [];
                     if (!transcriptRenderer) {
                         transcriptRenderer = await waitForElementByParent(
                             transcriptPanel, "ytd-transcript-renderer",
-                            { noTimeout: true, abortSignal: transcriptPanelAbortController.signal });
+                            { enableTimeout: false, abortSignal: transcriptPanelAbortController.signal });
                     }
 
                     attachElements({ transcriptPanel, transcriptRenderer });
 
                     const searchPanel = await waitForElementByParent(
                         transcriptRenderer, "ytd-transcript-search-panel-renderer > #header", 
-                        { noTimeout: true, abortSignal: transcriptPanelAbortController.signal });
+                        { enableTimeout: false, abortSignal: transcriptPanelAbortController.signal });
                     
                     makeMutationObserver(
                         { target: searchPanel,
