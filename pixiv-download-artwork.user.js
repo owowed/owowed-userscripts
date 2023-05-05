@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pixiv Download Artwork
 // @description  A userscript that adds a button, that can download the current artwork, with customizable filename.
-// @version      1.1.2
+// @version      1.1.3
 // @namespace    owowed.moe
 // @author       owowed <island@owowed.moe>
 // @homepage     https://github.com/owowed/owowed-userscripts
@@ -13,6 +13,8 @@
 // @require      https://github.com/owowed/userscript-common/raw/main/wait-for-element.js
 // @grant        GM_addStyle
 // @grant        GM_download
+// @grant        GM_getValue
+// @grant        GM_setValue
 // @license      LGPL-3.0
 // @updateURL    https://github.com/owowed/owowed-userscripts/raw/main/pixiv-download-artwork.user.js
 // @downloadURL  https://github.com/owowed/owowed-userscripts/raw/main/pixiv-download-artwork.user.js
@@ -23,10 +25,7 @@
     pixiv changes their webpage by javascript, not by redirecting to a new page
 */
 
-/* --- CONFIG STARTS HERE --- */
-
 /*
-    Set the filename
     There are few variables available in the filename to use:
         %artworkId% - Artwork Pixiv id
         %artworkTitle% - Artwork title 
@@ -43,13 +42,6 @@
         %webLang% - The website's language when you saw the artwork (taken from the URL path)
 */
 const filenameTemplate = "%artworkTitle% by %artworkAuthorName% [pixiv %artworkId%].%imageFileExtension%";
-
-/*
-    Toggle if you want to show "Save As" file prompt when saving an image. This may not work on some Userscript manager.
-*/
-const imageSaveAs = false;
-
-/* --- CONFIG ENDS HERE --- */
 
 GM_addStyle(`
     #oxi-artwork-toolbar {
@@ -152,8 +144,12 @@ function formatFilename(filename, formatData) {
 async function addImageFilenameTextarea() {
     const imageFilenameTextarea = document.createElement("textarea");
 
+    if (GM_getValue("image_filename") == undefined) {
+        GM_setValue("image_filename", filenameTemplate);
+    }
+
     imageFilenameTextarea.id = "oxi-image-filename-textarea";
-    imageFilenameTextarea.value = filenameTemplate;
+    imageFilenameTextarea.value = GM_getValue("image_filename");
     imageFilenameTextarea.placeholder = "Enter image filename...";
     imageFilenameTextarea.spellcheck = false;
     imageFilenameTextarea.title = `There are few variables available in the filename to use:
@@ -173,9 +169,11 @@ async function addImageFilenameTextarea() {
 
     imageFilenameTextarea.addEventListener("keyup", () => {
         imageFilename = imageFilenameTextarea.value;
+        GM_setValue("image_filename", imageFilename);
     });
     imageFilenameTextarea.addEventListener("change", () => {
         imageFilename = imageFilenameTextarea.value;
+        GM_setValue("image_filename", imageFilename);
     });
 
     const textareaLabel = document.createElement("div");
