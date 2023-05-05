@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pixiv Download Artwork
 // @description  A userscript that adds a button, that can download the current artwork, with customizable filename.
-// @version      1.0.2
+// @version      1.1.0
 // @namespace    owowed.moe
 // @author       owowed <island@owowed.moe>
 // @homepage     https://github.com/owowed/owowed-userscripts
@@ -51,17 +51,33 @@ const imageSaveAs = true;
 /* --- CONFIG ENDS HERE --- */
 
 GM_addStyle(`
+    #oxi-artwork-toolbar {
+        display: flex;
+        flex-flow: column;
+        gap: 5px;
+    }
+    #oxi-artwork-part-select {
+        width: 140px;
+    }
     #oxi-artwork-download-btn {
-        float: right;
+        width: fit-content;
+        height: fit-content;
+    }
+    #oxi-image-filename-textarea {
+        width: 630px;
+        font-family: monospace;
     }
 `)
 
+let artworkDescriptor, artworkToolbar, artworkSelectedHref, imageFilename = filenameTemplate;
+
 async function getMasterImageElem() {
-    const masterImageElem = await waitForElement(".gtm-expand-full-size-illust > img");
+    const masterImageElem = await waitForElement("figure > div a > img");
     return masterImageElem;
 }
 
 function getHighResolutionImageUrl(url) {
+    console.log(url);
     return url
         .replace("-master", "-original")
         .replace(/_master\d+\.(jpg)?$/, ".$1");
@@ -69,21 +85,12 @@ function getHighResolutionImageUrl(url) {
 
 async function getFilenameFormatData({ imageUrl }) {
     const formatData = {};
-    /*
-    Set the filename
-    There are few variables available in the filename to use:
-        %artworkId% - Artwork Pixiv id
-        %artworkTitle% - Artwork title 
-        %artworkAuthorName% - Author name
-        %artworkAuthorId% - Author Pixiv id
-        %artworkCreationDate% - Artwork creation date that is shown in the webpage
-        %imageFileExtension% - Image file type taken from the URL (the file extension does not include dot)
-*/
+
     // Artwork Id
     formatData.artworkId = window.location.href.split("works/")[1];
 
     // Artwork Descriptor (cached element)
-    const artworkDescriptor = await waitForElement("figcaption:has(h1, footer)");
+    artworkDescriptor ??= await waitForElement("figcaption:has(h1, footer)");
 
     // Artwork Title
     formatData.artworkTitle = await waitForElementByParent(artworkDescriptor, "h1").then(i => i.textContent);
@@ -108,6 +115,26 @@ async function getFilenameFormatData({ imageUrl }) {
     // Image File Extension
     formatData.imageFileExtension = imageUrl.split(".").at(-1);
 
+    // Artwork Like, Bookmark, View Count
+    const parseIntSafe = (i) => parseInt(i.textContent.replace(/[^\d]/g, ""));
+    formatData.artworkLikeCount = await waitForElementByParent(artworkDescriptor, "[title=Like]")
+        .then(parseIntSafe);
+    formatData.artworkBookmarkCount = await waitForElementByParent(artworkDescriptor, "[title=Bookmarks]")
+        .then(parseIntSafe);
+    formatData.artworkViewCount = await waitForElementByParent(artworkDescriptor, "[title=Views]")
+        .then(parseIntSafe);
+
+    // Image Date from Image's URL path
+    formatData.imageDateFromUrlPath = imageUrl
+        .split("/img/")[1]
+        .split("/").slice(0, -1).join("/");
+    
+    // Image Original Name from Image's URL path
+    formatData.imageOriginalFilename = imageUrl.split("/").at(-1);
+
+    // Website's Languange from URL path
+    formatData.webLag = window.location.href.split("/")[3];
+
     return formatData;
 }
 
@@ -118,17 +145,90 @@ function formatFilename(filename, formatData) {
     return filename;
 }
 
+async function addImageFilenameTextarea() {
+    const imageFilenameTextarea = document.createElement("textarea");
+
+    imageFilenameTextarea.id = "oxi-image-filename-textarea";
+    imageFilenameTextarea.value = filenameTemplate;
+    imageFilenameTextarea.placeholder = "Enter image filename...";
+    imageFilenameTextarea.spellcheck = false;
+
+    imageFilenameTextarea.addEventListener("keyup", () => {
+        imageFilename = imageFilenameTextarea.value;
+    });
+    imageFilenameTextarea.addEventListener("change", () => {
+        imageFilename = imageFilenameTextarea.value;
+    });
+
+    const textareaLabel = document.createElement("div");
+    textareaLabel.textContent = "Image Filename Format:"
+
+    artworkToolbar.append(textareaLabel);
+    artworkToolbar.append(imageFilenameTextarea);
+}
+
+async function addArtworkSelector({ event }) {
+    const label = document.createElement("div");
+
+    label.textContent = "Artwork Part:";
+    
+    const artworkPartSelect = document.createElement("select");
+
+    artworkPartSelect.id = "oxi-artwork-part-select";
+
+    artworkToolbar.append(label);
+    artworkToolbar.append(artworkPartSelect);
+
+    let abortController = new AbortController;
+    
+    update({ abortSignal: abortController.signal });
+
+    event.addEventListener("artwork-change", async () => {
+        abortController.abort();
+        abortController = new AbortController;
+        update({ abortSignal: abortController.signal });
+    });
+
+    async function update({ abortSignal }) {
+        const artworkPresentationContainer = await waitForElement("main > section figure");
+
+        makeMutationObserver({ target: artworkPresentationContainer, childList: true, abortSignal: abortController.signal }, () => {
+            setTimeout(() => {
+                optionsUpdate({ artworkPresentationContainer });
+            }, 1000);
+        });
+
+        optionsUpdate({ artworkPresentationContainer });
+    }
+
+    function optionsUpdate({ artworkPresentationContainer }) {
+        const artworkPresentation = artworkPresentationContainer.children[0];
+        const artworkParts = artworkPresentation.querySelectorAll("a > img");
+
+        artworkPartSelect.innerHTML = "";
+
+        for (let i = 0; i < artworkParts.length; i++) {
+            const option = document.createElement("option");
+            option.value = artworkParts[i].src;
+            option.textContent = `Artwork #${i}`;
+            artworkPartSelect.appendChild(option);
+        }
+
+        artworkPartSelect.addEventListener("change", () => {
+            artworkSelectedHref = artworkPartSelect.value;
+        });
+    }
+}
+
 async function addDownloadButton() {
-    const artworkTitleElem = await waitForElement("figcaption:has(footer) h1");
     const downloadBtn = document.createElement("button");
 
     downloadBtn.id = "oxi-artwork-download-btn";
     downloadBtn.textContent = "Download Artwork";
     downloadBtn.addEventListener("click", async () => {
-        const masterImageUrl = await getMasterImageElem().then(i => i.src);
         GM_download({
-            name: formatFilename(filenameTemplate, await getFilenameFormatData({ imageUrl: masterImageUrl })),
-            url: getHighResolutionImageUrl(masterImageUrl),
+            name: formatFilename(imageFilename, await getFilenameFormatData({ imageUrl: artworkSelectedHref })),
+            url: getHighResolutionImageUrl(artworkSelectedHref),
             saveAs: imageSaveAs,
             headers: {
                 Referer: "https://www.pixiv.net/"
@@ -136,15 +236,27 @@ async function addDownloadButton() {
         });
     });
 
-    setTimeout(() => {
-        artworkTitleElem.insertAdjacentElement("beforebegin", downloadBtn);
-    }, 1000);
+    artworkToolbar.appendChild(downloadBtn);
+
     return downloadBtn;
 }
 
-function dbg(...obj) {
-    console.debug(GM_info.name, ...obj)
-    return obj.at(-1)
+async function pageInit() {
+    artworkDescriptor = await waitForElement("figcaption:has(h1, footer)");
+    artworkToolbar = document.createElement("div");
+    const artworkTitleElem = await waitForElementByParent(artworkDescriptor, "footer");
+    
+    artworkToolbar.id = "oxi-artwork-toolbar";
+    artworkToolbar.hidden = true;
+
+    document.body.appendChild(artworkToolbar);
+
+    setTimeout(() => {
+        artworkTitleElem.insertAdjacentElement("beforebegin", artworkToolbar);
+        artworkToolbar.hidden = false;
+    }, 1000);
+
+    artworkSelectedHref = await getMasterImageElem().then(i => i.src);
 }
 
 void async function main() {
@@ -155,15 +267,37 @@ void async function main() {
         this "charcoalpage" element contains the "header" and "main content"
         the "main content" gets replaced by other element whether the user navigate to other pages
     */
- 
-    // this function checks if user navigates to other page when the "main content" (or any other elements inside "charcoalpage") gets replaced
+
+    const pageEventTarget = new EventTarget;
+    let abortController = new AbortController;
+
+    payload({ abortSignal: abortController.signal });
+
+    // this will execute function when the user navigates to other page when the "main content" (or any other elements inside "charcoalpage") gets replaced
+    // after user nagivate to artwork page, if the user keep navigating to other artwork page, then this wont get executed, unless if the user navigate to different page (like main page)
     makeMutationObserver({ target: charcoalpage, childList: true }, () => {
-        if (window.location.href.includes("/artworks/")) {
-            addDownloadButton();
-        }
+        abortController.abort();
+        abortController = new AbortController;
+        payload({ abortSignal: abortController.signal });
     });
 
-    if (window.location.href.includes("/artworks/")) {
-        addDownloadButton();
+    async function payload({ abortSignal }) {
+        if (window.location.href.includes("/artworks/")) {
+            await pageInit();
+            addArtworkSelector({ event: pageEventTarget });
+            addImageFilenameTextarea();
+            addDownloadButton();
+
+            const artworkPanel = await waitForElement("div:has(> figure, > figcaption)");
+            // this function will execute when the user navigate from an artwork page to another artwork page
+            makeMutationObserver({ target: artworkPanel, childList: true, abortSignal }, () => {
+                pageEventTarget.dispatchEvent(new Event("artwork-change"));
+            });
+        }
     }
 }();
+
+function dbg(...obj) {
+    console.debug(GM_info.name, ...obj)
+    return obj.at(-1)
+}
