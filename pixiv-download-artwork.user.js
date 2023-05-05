@@ -248,7 +248,7 @@ async function addDownloadButton() {
         GM_download({
             name: formatFilename(imageFilename, await getFilenameFormatData({ imageUrl: artworkSelectedHref })),
             url: getHighResolutionImageUrl(artworkSelectedHref),
-            saveAs: imageSaveAs,
+            saveAs: false,
             headers: {
                 Referer: "https://www.pixiv.net/"
             }
