@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pixiv Download Artwork
 // @description  A userscript that adds a button, that can download the current artwork, with customizable filename.
-// @version      1.1.3
+// @version      1.1.4
 // @namespace    owowed.moe
 // @author       owowed <island@owowed.moe>
 // @homepage     https://github.com/owowed/owowed-userscripts
@@ -57,7 +57,7 @@ GM_addStyle(`
         height: fit-content;
     }
     #oxi-image-filename-textarea {
-        width: 630px;
+        width: 640px;
         font-family: monospace;
     }
 `)
@@ -208,7 +208,7 @@ async function addArtworkSelector({ event }) {
     async function update({ abortSignal }) {
         const artworkPresentationContainer = await waitForElement("main > section figure");
 
-        makeMutationObserver({ target: artworkPresentationContainer, childList: true, abortSignal: abortController.signal }, () => {
+        makeMutationObserver({ target: artworkPresentationContainer, childList: true, abortSignal }, () => {
             setTimeout(() => {
                 optionsUpdate({ artworkPresentationContainer });
             }, 1000);
