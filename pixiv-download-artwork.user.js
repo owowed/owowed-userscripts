@@ -152,6 +152,19 @@ async function addImageFilenameTextarea() {
     imageFilenameTextarea.value = filenameTemplate;
     imageFilenameTextarea.placeholder = "Enter image filename...";
     imageFilenameTextarea.spellcheck = false;
+    imageFilenameTextarea.title = `There are few variables available in the filename to use:
+        %artworkId% - Artwork Pixiv id
+        %artworkTitle% - Artwork title 
+        %artworkAuthorName% - Author name
+        %artworkAuthorId% - Author Pixiv id
+        %artworkCreationDate% - Artwork creation date that is shown in the webpage
+        %imageFileExtension% - Image file type taken from the URL (the file extension does not include dot)
+        %artworkLikeCount% - Artwork's like count
+        %artworkBookmarkCount% - Artwork's bookmark count
+        %artworkViewCount% - Artwork's view count
+        %imageDateFromUrlPath% - Image creation date that is shown in the URL path (may not be correct, the hour time is +1 off)
+        %imageOriginalFilename% - Image original filename that is shown in the URL path
+        %webLang% - The website's language when you saw the artwork (taken from the URL path)`;
 
     imageFilenameTextarea.addEventListener("keyup", () => {
         imageFilename = imageFilenameTextarea.value;
