@@ -46,7 +46,7 @@ const filenameTemplate = "%artworkTitle% by %artworkAuthorName% [pixiv %artworkI
 /*
     Toggle if you want to show "Save As" file prompt when saving an image. This may not work on some Userscript manager.
 */
-const imageSaveAs = true;
+const imageSaveAs = false;
 
 /* --- CONFIG ENDS HERE --- */
 
