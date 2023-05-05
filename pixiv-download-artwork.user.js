@@ -47,7 +47,12 @@ GM_addStyle(`
     #oxi-artwork-toolbar {
         display: flex;
         flex-flow: column;
-        gap: 5px;
+    }
+    #oxi-artwork-toolbar > * {
+        margin-bottom: 7px;
+    }
+    #oxi-artwork-toolbar > label:has(+ *) {
+        margin-bottom: 2px;
     }
     #oxi-artwork-part-select {
         width: 140px;
@@ -129,7 +134,7 @@ async function getFilenameFormatData({ imageUrl }) {
     formatData.imageOriginalFilename = imageUrl.split("/").at(-1);
 
     // Website's Languange from URL path
-    formatData.webLag = window.location.href.split("/")[3];
+    formatData.webLang = window.location.href.split("/")[3];
 
     return formatData;
 }
@@ -176,15 +181,15 @@ async function addImageFilenameTextarea() {
         GM_setValue("image_filename", imageFilename);
     });
 
-    const textareaLabel = document.createElement("div");
+    const textareaLabel = document.createElement("label");
     textareaLabel.textContent = "Image Filename Format:"
 
     artworkToolbar.append(textareaLabel);
     artworkToolbar.append(imageFilenameTextarea);
 }
 
-async function addArtworkSelector({ event }) {
-    const label = document.createElement("div");
+async function addArtworkSelector({ event, abortSignal }) {
+    const label = document.createElement("label");
 
     label.textContent = "Artwork Part:";
     
@@ -200,6 +205,7 @@ async function addArtworkSelector({ event }) {
     update({ abortSignal: abortController.signal });
 
     event.addEventListener("artwork-change", async () => {
+        if (abortSignal.aborted) return;
         abortController.abort();
         abortController = new AbortController;
         update({ abortSignal: abortController.signal });
@@ -260,10 +266,10 @@ async function addDownloadButton() {
     return downloadBtn;
 }
 
-async function pageInit() {
+async function pageInit({ event, abortSignal }) {
     artworkDescriptor = await waitForElement("figcaption:has(h1, footer)");
     artworkToolbar = document.createElement("div");
-    const artworkTitleElem = await waitForElementByParent(artworkDescriptor, "footer");
+    const footerElem = await waitForElementByParent(artworkDescriptor, "footer");
     
     artworkToolbar.id = "oxi-artwork-toolbar";
     artworkToolbar.hidden = true;
@@ -271,9 +277,14 @@ async function pageInit() {
     document.body.appendChild(artworkToolbar);
 
     setTimeout(() => {
-        artworkTitleElem.insertAdjacentElement("beforebegin", artworkToolbar);
+        footerElem.insertAdjacentElement("beforebegin", artworkToolbar);
         artworkToolbar.hidden = false;
     }, 1000);
+
+    event.addEventListener("artwork-change", () => {
+        if (abortSignal.aborted) return;
+        footerElem.insertAdjacentElement("beforebegin", artworkToolbar);
+    });
 
     artworkSelectedHref = await getMasterImageElem().then(i => i.src);
 }
@@ -298,14 +309,20 @@ void async function main() {
         abortController.abort();
         abortController = new AbortController;
         payload({ abortSignal: abortController.signal });
+        pageEventTarget.dispatchEvent(new Event("page-change"));
     });
 
     async function payload({ abortSignal }) {
+        const modules = [
+            pageInit,
+            addArtworkSelector,
+            addImageFilenameTextarea,
+            addDownloadButton
+        ];
         if (window.location.href.includes("/artworks/")) {
-            await pageInit();
-            addArtworkSelector({ event: pageEventTarget });
-            addImageFilenameTextarea();
-            addDownloadButton();
+            for (const module of modules) {
+                await module({ event: pageEventTarget, abortSignal });
+            }
 
             const artworkPanel = await waitForElement("div:has(> figure, > figcaption)");
             // this function will execute when the user navigate from an artwork page to another artwork page
