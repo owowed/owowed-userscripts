@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pixiv Download Artwork
 // @description  A userscript that adds a button, that can download the current artwork, with customizable filename.
-// @version      1.1.1
+// @version      1.1.2
 // @namespace    owowed.moe
 // @author       owowed <island@owowed.moe>
 // @homepage     https://github.com/owowed/owowed-userscripts
@@ -33,6 +33,7 @@
         %artworkAuthorName% - Author name
         %artworkAuthorId% - Author Pixiv id
         %artworkCreationDate% - Artwork creation date that is shown in the webpage
+        %artworkSelectedPartNum% - Artwork part number when downloading from multiple artworks (if you download the first artwork, then it will be "0")
         %imageFileExtension% - Image file type taken from the URL (the file extension does not include dot)
         %artworkLikeCount% - Artwork's like count
         %artworkBookmarkCount% - Artwork's bookmark count
@@ -69,7 +70,7 @@ GM_addStyle(`
     }
 `)
 
-let artworkDescriptor, artworkToolbar, artworkSelectedHref, imageFilename = filenameTemplate;
+let artworkDescriptor, artworkToolbar, artworkSelectedHref, imageFilename = filenameTemplate, lastSelectedArtworkPartNum;
 
 async function getMasterImageElem() {
     const masterImageElem = await waitForElement("figure > div a > img");
@@ -111,6 +112,9 @@ async function getFilenameFormatData({ imageUrl }) {
     // Artwork Creation Date
     formatData.artworkCreationDate = await waitForElementByParent(artworkDescriptor, "[title='Posting date']")
         .then(i => i.textContent);
+
+    // Artwork Selected Part Number
+    formatData.artworkSelectedPartNum = lastSelectedArtworkPartNum;
     
     // Image File Extension
     formatData.imageFileExtension = imageUrl.split(".").at(-1);
@@ -158,6 +162,7 @@ async function addImageFilenameTextarea() {
         %artworkAuthorName% - Author name
         %artworkAuthorId% - Author Pixiv id
         %artworkCreationDate% - Artwork creation date that is shown in the webpage
+        %artworkSelectedPartNum% - Artwork part number when downloading from multiple artworks (if you download the first artwork, then it will be "0")
         %imageFileExtension% - Image file type taken from the URL (the file extension does not include dot)
         %artworkLikeCount% - Artwork's like count
         %artworkBookmarkCount% - Artwork's bookmark count
@@ -229,6 +234,9 @@ async function addArtworkSelector({ event }) {
 
         artworkPartSelect.addEventListener("change", () => {
             artworkSelectedHref = artworkPartSelect.value;
+            lastSelectedArtworkPartNum = artworkPartSelect.value
+                .split("/").at(-1)
+                .match(/\d+_p(\d+)/)[1];
         });
     }
 }
