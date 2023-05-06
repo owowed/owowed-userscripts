@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pixiv Download Artwork
 // @description  A userscript that adds a button, that can download the current artwork, with customizable filename.
-// @version      1.1.7
+// @version      1.1.8
 // @namespace    owowed.moe
 // @author       owowed <island@owowed.moe>
 // @homepage     https://github.com/owowed/owowed-userscripts
@@ -68,7 +68,7 @@ let artworkDescriptor,
             %imageOriginalFilename% - Image original filename that is shown in the URL path
             %webLang% - The website's language when you saw the artwork (taken from the URL path)
     */
-    imageFilename = "%artworkTitle% by %artworkAuthorName% #%artworkPartNum% [pixiv %artworkId%].%imageFileExtension%",
+    imageFilename = GM_getValue("image_filename") ?? "%artworkTitle% by %artworkAuthorName% #%artworkPartNum% [pixiv %artworkId%].%imageFileExtension%",
     lastSelectedArtworkPartNum,
     downloadAllArtwork,
     artworkPartsHref = [];
@@ -153,7 +153,7 @@ async function addImageFilenameTextarea() {
     const imageFilenameTextarea = document.createElement("textarea");
 
     if (GM_getValue("image_filename") == undefined) {
-        GM_setValue("image_filename", filenameTemplate);
+        GM_setValue("image_filename", imageFilename);
     }
 
     imageFilenameTextarea.id = "oxi-image-filename-textarea";
