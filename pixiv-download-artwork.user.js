@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pixiv Download Artwork
 // @description  A userscript that adds a button, that can download the current artwork, with customizable filename.
-// @version      1.1.5
+// @version      1.1.6
 // @namespace    owowed.moe
 // @author       owowed <island@owowed.moe>
 // @homepage     https://github.com/owowed/owowed-userscripts
@@ -24,24 +24,6 @@
     "@match *://www.pixiv.net/*" is for adding download for user who navigated from pixiv homepage to pixiv artwork page
     pixiv changes their webpage by javascript, not by redirecting to a new page
 */
-
-/*
-    There are few variables available in the filename to use:
-        %artworkId% - Artwork Pixiv id
-        %artworkTitle% - Artwork title 
-        %artworkAuthorName% - Author name
-        %artworkAuthorId% - Author Pixiv id
-        %artworkCreationDate% - Artwork creation date that is shown in the webpage
-        %artworkSelectedPartNum% - Artwork part number when downloading from multiple artworks (if you download the first artwork, then it will be "0")
-        %imageFileExtension% - Image file type taken from the URL (the file extension does not include dot)
-        %artworkLikeCount% - Artwork's like count
-        %artworkBookmarkCount% - Artwork's bookmark count
-        %artworkViewCount% - Artwork's view count
-        %imageDateFromUrlPath% - Image creation date that is shown in the URL path (may not be correct, the hour time is +1 off)
-        %imageOriginalFilename% - Image original filename that is shown in the URL path
-        %webLang% - The website's language when you saw the artwork (taken from the URL path)
-*/
-const filenameTemplate = "%artworkTitle% by %artworkAuthorName% [pixiv %artworkId%].%imageFileExtension%";
 
 GM_addStyle(`
     #oxi-artwork-toolbar {
@@ -67,15 +49,36 @@ GM_addStyle(`
     }
 `)
 
-let artworkDescriptor, artworkToolbar, artworkSelectedHref, imageFilename = filenameTemplate, lastSelectedArtworkPartNum;
+let artworkDescriptor,
+    artworkToolbar,
+    artworkSelectedHref,
+    /*
+        There are few variables available in the filename to use:
+            %artworkId% - Artwork Pixiv id
+            %artworkTitle% - Artwork title 
+            %artworkAuthorName% - Author name
+            %artworkAuthorId% - Author Pixiv id
+            %artworkCreationDate% - Artwork creation date that is shown in the webpage
+            %artworkPartNum% - Artwork part number when downloading from multiple artworks (if you download the first artwork, then it will be "0")
+            %imageFileExtension% - Image file type taken from the URL (the file extension does not include dot)
+            %artworkLikeCount% - Artwork's like count
+            %artworkBookmarkCount% - Artwork's bookmark count
+            %artworkViewCount% - Artwork's view count
+            %imageDateFromUrlPath% - Image creation date that is shown in the URL path (may not be correct, the hour time is +1 off)
+            %imageOriginalFilename% - Image original filename that is shown in the URL path
+            %webLang% - The website's language when you saw the artwork (taken from the URL path)
+    */
+    imageFilename = "%artworkTitle% by %artworkAuthorName% #%artworkPartNum% [pixiv %artworkId%].%imageFileExtension%",
+    lastSelectedArtworkPartNum,
+    downloadAllArtwork,
+    artworkPartsHref = [];
 
-async function getMasterImageElem() {
-    const masterImageElem = await waitForElement("figure > div a > img");
-    return masterImageElem;
+async function getMasterImageUrl() {
+    const masterImageElem = await waitForElement("figure > div a");
+    return masterImageElem.href;
 }
 
 function getHighResolutionImageUrl(url) {
-    console.log(url);
     return url
         .replace("-master", "-original")
         .replace(/_master\d+\.(jpg)?$/, ".$1");
@@ -111,7 +114,7 @@ async function getFilenameFormatData({ imageUrl }) {
         .then(i => i.textContent);
 
     // Artwork Selected Part Number
-    formatData.artworkSelectedPartNum = lastSelectedArtworkPartNum;
+    formatData.artworkPartNum = lastSelectedArtworkPartNum;
     
     // Image File Extension
     formatData.imageFileExtension = imageUrl.split(".").at(-1);
@@ -163,7 +166,7 @@ async function addImageFilenameTextarea() {
         %artworkAuthorName% - Author name
         %artworkAuthorId% - Author Pixiv id
         %artworkCreationDate% - Artwork creation date that is shown in the webpage
-        %artworkSelectedPartNum% - Artwork part number when downloading from multiple artworks (if you download the first artwork, then it will be "0")
+        %artworkPartNum% - Artwork part number when downloading from multiple artworks (if you download the first artwork, then it will be "0")
         %imageFileExtension% - Image file type taken from the URL (the file extension does not include dot)
         %artworkLikeCount% - Artwork's like count
         %artworkBookmarkCount% - Artwork's bookmark count
@@ -225,22 +228,39 @@ async function addArtworkSelector({ event, abortSignal }) {
 
     function optionsUpdate({ artworkPresentationContainer }) {
         const artworkPresentation = artworkPresentationContainer.children[0];
-        const artworkParts = artworkPresentation.querySelectorAll("a > img");
+        const artworkParts = artworkPresentation.querySelectorAll("a:has(> img)");
 
         artworkPartSelect.innerHTML = "";
-
+        artworkPartsHref = [];
+        
         for (let i = 0; i < artworkParts.length; i++) {
             const option = document.createElement("option");
-            option.value = artworkParts[i].src;
+            artworkPartsHref.push(artworkParts[i].href);
+            option.value = artworkParts[i].href;
             option.textContent = `Artwork #${i}`;
             artworkPartSelect.appendChild(option);
         }
 
+        if (artworkParts.length > 1) {
+            const allArtworkOption = document.createElement("option");
+    
+            allArtworkOption.textContent = "All Artwork Parts (Bulk)";
+            allArtworkOption.value = "all-artwork";
+    
+            artworkPartSelect.append(allArtworkOption);
+        }
+
         artworkPartSelect.addEventListener("change", () => {
-            artworkSelectedHref = artworkPartSelect.value;
-            lastSelectedArtworkPartNum = artworkPartSelect.value
-                .split("/").at(-1)
-                .match(/\d+_p(\d+)/)[1];
+            if (artworkPartSelect.value == "all-artwork") {
+                downloadAllArtwork = true;
+            }
+            else {
+                downloadAllArtwork = false;
+                artworkSelectedHref = artworkPartSelect.value;
+                lastSelectedArtworkPartNum = artworkPartSelect.value
+                    .split("/").at(-1)
+                    .match(/\d+_p(\d+)/)[1];
+            }
         });
     }
 }
@@ -251,14 +271,35 @@ async function addDownloadButton() {
     downloadBtn.id = "oxi-artwork-download-btn";
     downloadBtn.textContent = "Download Artwork";
     downloadBtn.addEventListener("click", async () => {
-        GM_download({
-            name: formatFilename(imageFilename, await getFilenameFormatData({ imageUrl: artworkSelectedHref })),
-            url: getHighResolutionImageUrl(artworkSelectedHref),
-            saveAs: false,
-            headers: {
-                Referer: "https://www.pixiv.net/"
+        if (downloadAllArtwork) {
+            let partNum = 0;
+            for (const artworkHref of artworkPartsHref) {
+                const downloadOptions = {
+                    name: formatFilename(imageFilename, {
+                        ...await getFilenameFormatData({ imageUrl: artworkSelectedHref }),
+                        artworkPartNum: partNum
+                    }),
+                    url: artworkHref,
+                    saveAs: false,
+                    headers: {
+                        Referer: "https://www.pixiv.net/"
+                    }
+                };
+                GM_download(downloadOptions);
+                partNum++;
             }
-        });
+        }
+        else {
+            const downloadOptions = {
+                name: formatFilename(imageFilename, await getFilenameFormatData({ imageUrl: artworkSelectedHref })),
+                url: artworkSelectedHref,
+                saveAs: false,
+                headers: {
+                    Referer: "https://www.pixiv.net/"
+                }
+            };
+            GM_download(downloadOptions);
+        }
     });
 
     artworkToolbar.appendChild(downloadBtn);
@@ -286,7 +327,7 @@ async function pageInit({ event, abortSignal }) {
         footerElem.insertAdjacentElement("beforebegin", artworkToolbar);
     });
 
-    artworkSelectedHref = await getMasterImageElem().then(i => i.src);
+    artworkSelectedHref = await getMasterImageUrl();
 }
 
 void async function main() {
@@ -320,6 +361,8 @@ void async function main() {
             addDownloadButton
         ];
         if (window.location.href.includes("/artworks/")) {
+            resetPayload();
+
             for (const module of modules) {
                 await module({ event: pageEventTarget, abortSignal });
             }
@@ -327,9 +370,14 @@ void async function main() {
             const artworkPanel = await waitForElement("div:has(> figure, > figcaption)");
             // this function will execute when the user navigate from an artwork page to another artwork page
             makeMutationObserver({ target: artworkPanel, childList: true, abortSignal }, () => {
+                resetPayload();
                 pageEventTarget.dispatchEvent(new Event("artwork-change"));
             });
         }
+    }
+
+    function resetPayload() {
+        downloadAllArtwork = false;
     }
 }();
 
