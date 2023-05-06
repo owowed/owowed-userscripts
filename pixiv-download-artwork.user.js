@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pixiv Download Artwork
 // @description  A userscript that adds a button, that can download the current artwork, with customizable filename.
-// @version      1.1.6
+// @version      1.1.7
 // @namespace    owowed.moe
 // @author       owowed <island@owowed.moe>
 // @homepage     https://github.com/owowed/owowed-userscripts
@@ -232,6 +232,8 @@ async function addArtworkSelector({ event, abortSignal }) {
 
         artworkPartSelect.innerHTML = "";
         artworkPartsHref = [];
+        lastSelectedArtworkPartNum = 0;
+        downloadAllArtwork = false;
         
         for (let i = 0; i < artworkParts.length; i++) {
             const option = document.createElement("option");
@@ -361,8 +363,6 @@ void async function main() {
             addDownloadButton
         ];
         if (window.location.href.includes("/artworks/")) {
-            resetPayload();
-
             for (const module of modules) {
                 await module({ event: pageEventTarget, abortSignal });
             }
@@ -370,14 +370,9 @@ void async function main() {
             const artworkPanel = await waitForElement("div:has(> figure, > figcaption)");
             // this function will execute when the user navigate from an artwork page to another artwork page
             makeMutationObserver({ target: artworkPanel, childList: true, abortSignal }, () => {
-                resetPayload();
                 pageEventTarget.dispatchEvent(new Event("artwork-change"));
             });
         }
-    }
-
-    function resetPayload() {
-        downloadAllArtwork = false;
     }
 }();
 
