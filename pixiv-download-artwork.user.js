@@ -66,7 +66,7 @@ let artworkDescriptor,
             %artworkViewCount% - Artwork's view count
             %imageDateFromUrlPath% - Image creation date that is shown in the URL path (may not be correct, the hour time is +1 off)
             %imageOriginalFilename% - Image original filename that is shown in the URL path
-            %webLang% - The website's language when you saw the artwork (taken from the URL path)
+            %webLang% - The website's language when you visit the artwork (taken from the URL path)
     */
     imageFilename = GM_getValue("image_filename") ?? "%artworkTitle% by %artworkAuthorName% #%artworkPartNum% [pixiv %artworkId%].%imageFileExtension%",
     lastSelectedArtworkPartNum,
@@ -173,7 +173,7 @@ async function addImageFilenameTextarea() {
         %artworkViewCount% - Artwork's view count
         %imageDateFromUrlPath% - Image creation date that is shown in the URL path (may not be correct, the hour time is +1 off)
         %imageOriginalFilename% - Image original filename that is shown in the URL path
-        %webLang% - The website's language when you saw the artwork (taken from the URL path)`;
+        %webLang% - The website's language when you visit the artwork (taken from the URL path)`;
 
     imageFilenameTextarea.addEventListener("keyup", () => {
         imageFilename = imageFilenameTextarea.value;
