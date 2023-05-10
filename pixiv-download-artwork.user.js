@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pixiv Download Artwork
 // @description  A userscript that adds a button, that can download the current artwork, with customizable filename.
-// @version      1.2.0
+// @version      1.2.1
 // @namespace    owowed.moe
 // @author       owowed <island@owowed.moe>
 // @homepage     https://github.com/owowed/owowed-userscripts
@@ -342,6 +342,10 @@ class ToolbarPatch {
             this.selectedArtworkPart = artworkParts[0];
 
             this.updateArtworkSelectorOptions(artworkParts);
+
+            this.artworkPartSelectorElem.append(
+                $("<option>", { text: `If there is more than one artwork, click "Show More" button, then other artworks will automatically appear here.`, value: `0:${artworkParts[0].href}`, disabled: true })[0]
+            );
 
             makeMutationObserver({ target: this.artworkContainer, childList: true, once: true }, async () => {
                 await this.waitMoreThanOneImageLoaded();
