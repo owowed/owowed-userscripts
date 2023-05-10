@@ -344,7 +344,7 @@ class ToolbarPatch {
             this.updateArtworkSelectorOptions(artworkParts);
 
             this.artworkPartSelectorElem.append(
-                $("<option>", { text: `If there is more than one artwork, click "Show More" button, then other artworks will automatically appear here.`, value: `0:${artworkParts[0].href}`, disabled: true })[0]
+                $("<option>", { text: `If there is more than one artwork, click "Show all" button, then other artworks will automatically appear here.`, value: `0:${artworkParts[0].href}`, disabled: true })[0]
             );
 
             makeMutationObserver({ target: this.artworkContainer, childList: true, once: true }, async () => {
