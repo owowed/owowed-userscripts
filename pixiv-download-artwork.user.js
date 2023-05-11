@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pixiv Download Artwork
 // @description  A userscript that adds a button, that can download the current artwork, with customizable filename.
-// @version      1.2.1
+// @version      1.2.2
 // @namespace    owowed.moe
 // @author       owowed <island@owowed.moe>
 // @homepage     https://github.com/owowed/owowed-userscripts
@@ -48,18 +48,6 @@ GM_addStyle(`
         width: 640px;
         font-family: monospace;
     }
-    #oxi-artwork-download-progress[data-oxi-download-state="downloading"] {
-        color: aquamarine;
-    }
-    #oxi-artwork-download-progress[data-oxi-download-state="complete"] {
-        color: darkgoldenrod;
-    }
-    #oxi-artwork-download-progress[data-oxi-download-state="error"] {
-        color: red;
-    }
-    #oxi-artwork-download-progress[data-oxi-download-state="timeout"] {
-        color: palevioletred;
-    }
 `);
 
 const IMAGE_FILENAME_TOOLTIP_GUIDE = `There are few variables available in the filename to use:
@@ -86,7 +74,27 @@ function formatFilename(filename, formatData) {
     return filename;
 }
 
-async function getFilenameFormatData({ selectedArtworkPart: { index: selectedPartNum, href: imageUrl } }) {
+function getFilenameImageFormatData({ imageUrl, selectedPartNum }) {
+    const formatData = {};
+
+    // Artwork Selected Part Number
+    formatData.artworkPartNum = selectedPartNum;
+    
+    // Image File Extension
+    formatData.imageFileExtension = imageUrl.split(".").at(-1);
+
+    // Image Date from Image's URL path
+    formatData.imageDateFromUrlPath = imageUrl
+        .split("/img/")[1]
+        .split("/").slice(0, -1).join("/");
+    
+    // Image Original Name from Image's URL path
+    formatData.imageOriginalFilename = imageUrl.split("/").at(-1);
+
+    return formatData;
+}
+
+async function getFilenamePageFormatData() {
     const formatData = {};
 
     // Artwork Id
@@ -115,12 +123,6 @@ async function getFilenameFormatData({ selectedArtworkPart: { index: selectedPar
     formatData.artworkCreationDate = await waitForElementByParent(artworkDescriptor, "[title='Posting date']")
         .then(i => i.textContent);
 
-    // Artwork Selected Part Number
-    formatData.artworkPartNum = selectedPartNum;
-    
-    // Image File Extension
-    formatData.imageFileExtension = imageUrl.split(".").at(-1);
-
     // Artwork Like, Bookmark, View Count
     const parseIntSafe = (i) => parseInt(i.textContent.replace(/[^\d]/g, ""));
     formatData.artworkLikeCount = await waitForElementByParent(artworkDescriptor, "[title=Like]")
@@ -130,14 +132,6 @@ async function getFilenameFormatData({ selectedArtworkPart: { index: selectedPar
     formatData.artworkViewCount = await waitForElementByParent(artworkDescriptor, "[title=Views]")
         .then(parseIntSafe);
 
-    // Image Date from Image's URL path
-    formatData.imageDateFromUrlPath = imageUrl
-        .split("/img/")[1]
-        .split("/").slice(0, -1).join("/");
-    
-    // Image Original Name from Image's URL path
-    formatData.imageOriginalFilename = imageUrl.split("/").at(-1);
-
     // Website's Languange from URL path
     formatData.webLang = window.location.href.split("/")[3];
 
@@ -145,11 +139,13 @@ async function getFilenameFormatData({ selectedArtworkPart: { index: selectedPar
 }
 
 class ToolbarPatch {
+    patcher;
+
     toolbarElem;
     downloadBtnElem;
     imageFilenameElem;
     artworkPartSelectorElem;
-    downloadProgressElem;
+    downloadProgressContainerElem;
     
     // artwork-navigate scope
     artworkDescriptor;
@@ -158,83 +154,27 @@ class ToolbarPatch {
     selectedArtworkPart;
     bulkDownloadArtworks = false;
 
+    #GM_DOWNLOAD_OPTIONS_TEMPLATE = {
+        saveAs: false,
+        headers: {
+            Referer: "https://www.pixiv.net/"
+        },
+    };
+    #GM_DOWNLOAD_MAX_RETRY_ATTEMPT = 8;
+
     constructor () {
         this.toolbarElem = $("<div>", { id: "oxi-artwork-toolbar", hidden: true })[0];
+
         this.downloadBtnElem = $("<button>", { id: "oxi-artwork-download-btn", text: "Download Artwork" })
-            .on("click", async () => {
-                const formatData = await getFilenameFormatData({ selectedArtworkPart: this.selectedArtworkPart });
-                let downloadOptions = {
-                    saveAs: false,
-                    headers: {
-                        Referer: "https://www.pixiv.net/"
-                    },
-                };
-                let progressCounter = 0;
+            .on("click", () => {
                 if (!this.bulkDownloadArtworks) {
-                    downloadOptions = {
-                        ...downloadOptions,
-                        name: formatFilename(GM_getValue("image_filename") ?? DEFAULT_IMAGE_FILENAME, formatData),
-                        url: this.selectedArtworkPart.href,
-                        onload: () => {
-                            this.displayDownloadProgress({ state: "complete", text: `Download complete! (${progressCounter} progress)` });
-                        },
-                        onprogress: () => {
-                            progressCounter++;
-                            this.displayDownloadProgress({ state: "downloading", text: `Downloading artwork... (${progressCounter} progress)` });
-                        },
-                        onerror: () => {
-                            this.displayDownloadProgress({ state: "error", text: `Download error! Download may be failed or cancelled. (${progressCounter} progress)` });
-                        },
-                        ontimeout: () => {
-                            this.displayDownloadProgress({ state: "timeout", text: `Download timeout error! (${progressCounter} progress)` });
-                        }
-                    };
-                    GM_download(downloadOptions);
+                    this.#downloadArtworkParts(this.#getArtworkParts().slice(0, 1));
                 }
                 else {
-                    const promises = [];
-                    const totalArtworkParts = this.getArtworkParts();
-                    let downloadCompleteCounter = 0;
-                    for (const { index, href } of this.getArtworkParts()) {
-                        const downloadPromise = new Promise((resolve, reject) => {
-                            downloadOptions = {
-                                ...downloadOptions,
-                                name: formatFilename(GM_getValue("image_filename") ?? DEFAULT_IMAGE_FILENAME, { ...formatData, artworkPartNum: index }),
-                                url: href,
-                                onload: () => {
-                                    downloadCompleteCounter++;
-                                    resolve();
-                                },
-                                onprogress: () => {
-                                    progressCounter++;
-                                    this.displayDownloadProgress({ state: "downloading", text: `Downloading artworks... (${downloadCompleteCounter} out of ${totalArtworkParts.length} downloaded artworks, ${progressCounter} total progress)` });
-                                },
-                                onerror: () => {
-                                    reject({ state: "error" });
-                                },
-                                ontimeout: () => {
-                                    reject({ state: "timeout" });
-                                }
-                            }
-                            GM_download(downloadOptions);
-                        });
-                        promises.push(downloadPromise);
-                    }
-                    Promise.all(promises)
-                        .then(() => {
-                            this.displayDownloadProgress({ state: "complete", text: `Download complete! (${downloadCompleteCounter} out of ${totalArtworkParts.length} downloaded artworks, ${progressCounter} total progress)` });
-                        })
-                        .catch(({ state }) => {
-                            if (state == "error") {
-                                this.displayDownloadProgress({ state: "error", text: `Download error! Download may be failed or cancelled. (${downloadCompleteCounter} out of ${totalArtworkParts.length} downloaded artworks, ${progressCounter} total progress)` });
-                            }
-                            else if (state == "timeout") {
-                                this.displayDownloadProgress({ state: "timeout", text: `Download timeout error! (${downloadCompleteCounter} out of ${totalArtworkParts.length} downloaded artworks, ${progressCounter} total progress)` });
-                            }
-                        });
+                    this.#downloadArtworkParts(this.#getArtworkParts());
                 }
             })[0];
-        const imageFilenameLabel = $("<label>", { text: "Image Filename Template:" })[0];
+        
         this.imageFilenameElem = $("<textarea>",
                 { id: "oxi-artwork-image-filename",
                     title: IMAGE_FILENAME_TOOLTIP_GUIDE,
@@ -244,7 +184,7 @@ class ToolbarPatch {
             .on("keyup change", () => {
                 GM_setValue("image_filename", this.imageFilenameElem.value)
             })[0];
-        const selectorLabel = $("<label>", { text: "Selected Artwork Part:" })[0];
+        
         this.artworkPartSelectorElem = $("<select>", { id: "oxi-artwork-part-selector" })
             .on("input", () => {
                 if (this.artworkPartSelectorElem.value == "bulk-download-artworks") {
@@ -255,7 +195,11 @@ class ToolbarPatch {
                     this.selectedArtworkPart = { index: parseInt(index), href: href.join(":") };
                 }
             })[0];
-        this.downloadProgressElem = $("<div>", { id: "oxi-artwork-download-progress", hidden: true })[0];
+        
+        this.downloadProgressContainerElem = document.createElement("div");
+
+        const imageFilenameLabel = $("<label>", { text: "Image Filename Template:" })[0];
+        const selectorLabel = $("<label>", { text: "Selected Artwork Part:" })[0];
 
         $(this.toolbarElem).append([
             imageFilenameLabel,
@@ -263,22 +207,11 @@ class ToolbarPatch {
             selectorLabel,
             this.artworkPartSelectorElem,
             this.downloadBtnElem,
-            this.downloadProgressElem,
+            this.downloadProgressContainerElem,
         ]);
     }
 
-    // artwork-navigate scope
-    waitArtworkImageLoaded() {
-        return new Promise(async (resolve) => {
-            const img = await waitForElementByParent(this.artworkContainer, `div > a > img`);
-            img.addEventListener("load", () => resolve(true));
-            if (img.complete) {
-                resolve(true);
-            }
-        });
-    }
-
-    waitMoreThanOneImageLoaded() {
+    #waitMoreThanOneImageLoaded() {
         return new Promise((resolve) => {
             const imageContainer = this.artworkContainer.querySelector("div");
 
@@ -288,30 +221,113 @@ class ToolbarPatch {
         })
     }
 
-    displayDownloadProgress({ state, text }) {
-        $(this.downloadProgressElem).attr("data-oxi-download-state", state);
-        this.downloadProgressElem.hidden = false;
-        this.downloadProgressElem.textContent = text;
+    async #downloadArtworkParts(artworkPartList) {
+        this.#displayDownloadProgress({ id: "title", state: "starting", text: "Initiliazing artwork download..." });
 
-        if (state == "complete") {
-            setTimeout(() => this.downloadProgressElem.hidden = true, 18_000);
+        let downloadQueue = [...artworkPartList];
+        let retryCounter = 0;
+        
+        const pageFormatData = await getFilenamePageFormatData();
+
+        while (downloadQueue.length > 0 && retryCounter < this.#GM_DOWNLOAD_MAX_RETRY_ATTEMPT) {
+            if (retryCounter > 0) {
+                this.#displayDownloadProgress({ id: "title", text: `Some of the download had failed, retrying download... ${getProgressInfoText()}` });
+            }
+            
+            const promises = [];
+            
+            let progressCounter = {};
+            let downloadedArtworkCounter = 0;
+
+            const getProgressInfoText = ({ index }) => `(${progressCounter[index]} progress)`;
+            const getTotalProgressInfoText = () => `(${downloadedArtworkCounter} out of ${artworkPartList.length} artworks)`;
+
+            for (const artworkPart of downloadQueue) {
+                const { index, href } = artworkPart;
+                
+                progressCounter[index] = 0;
+
+                const promise = new Promise((resolve) => {
+                    const downloadOptions = {
+                        ...this.#GM_DOWNLOAD_OPTIONS_TEMPLATE,
+                        name: formatFilename(GM_getValue("image_filename") ?? DEFAULT_IMAGE_FILENAME, { ...pageFormatData, ...getFilenameImageFormatData({ selectedPartNum: index, imageUrl: href }) }),
+                        url: href,
+                        onload: () => {
+                            downloadedArtworkCounter++;
+                            downloadQueue.splice(downloadQueue.indexOf(artworkPart), 1);
+                            this.#displayDownloadProgress({ id: index, text: `Artwork #${index} download complete! ${getProgressInfoText({ index })}` });
+                            resolve();
+                        },
+                        onprogress: () => {
+                            progressCounter[index]++;
+                            this.#displayDownloadProgress({ id: "title", text: `Downloading artworks... ${getTotalProgressInfoText()}` });
+                            this.#displayDownloadProgress({ id: index, text: `Downloading Artwork #${index}... ${getProgressInfoText({ index })}` });
+                        },
+                        onerror: () => {
+                            dbg(`download error: artwork #${index} ${getProgressInfoText({ index })}`);
+                            this.#displayDownloadProgress({ id: index, text: `Failed to download Artwork #${index} due to an error. ${getProgressInfoText({ index })}` });
+                            resolve();
+                        },
+                        ontimeout: () => {
+                            dbg(`download timeout error: artwork #${index} ${getProgressInfoText({ index })}`);
+                            this.#displayDownloadProgress({ id: index, text: `Failed to download Artwork #${index} due to a timeout error. ${getProgressInfoText({ index })}` });
+                            resolve();
+                        }
+                    }
+                    
+                    GM_download(downloadOptions);
+                });
+
+                promises.push(promise);
+            }
+
+            await Promise.all(promises);
+            retryCounter++;
+        }
+
+        const getDownloadConclusionText = () => `(${artworkPartList.length} artworks)`;
+
+        if (downloadQueue.length > 0) {
+            this.#displayDownloadProgress({ id: "title", text: `Download complete, but some artwork cannot be downloaded due to an error. ${getDownloadConclusionText()}` });
+        }
+        else {
+            this.#displayDownloadProgress({ id: "title", text: `All artworks has been successfully downloaded! ${getDownloadConclusionText()}` });
         }
     }
 
-    getArtworkParts() {
+    #progressElements = {};
+
+    #displayDownloadProgress({ id, text }) {
+        if (!this.#progressElements[id]) {
+            const elem = document.createElement("div");
+            this.downloadProgressContainerElem.append(elem);
+            this.#progressElements[id] = elem;
+        }
+
+        this.#progressElements[id].textContent = text;
+    }
+
+    #clearDownloadProgress() {
+        for (const val of Object.values(this.#progressElements)) {
+            val.remove();
+        }
+        this.#progressElements = {};
+    }
+
+    #getArtworkParts() {
         const anchors = this.artworkContainer.querySelectorAll(`div > a`);
         const artworkParts = [];
 
         let counter = 0;
         for (const anchor of anchors) {
-            artworkParts.push({ index: counter, href: anchor.href });
+            artworkParts.push({ index: counter + 1, href: anchor.href });
             counter++;
         }
 
         return artworkParts;
     }
 
-    updateArtworkSelectorOptions(artworkParts) {
+    #updateArtworkSelectorOptions(artworkParts) {
         this.artworkPartSelectorElem.innerHTML = "";
         for (const { index, href } of artworkParts) {
             this.artworkPartSelectorElem.append(
@@ -321,13 +337,15 @@ class ToolbarPatch {
     }
 
     patch(patcher) {
+        this.patcher = patcher;
+
         const artworkNavigateStartPromise = new Promise((resolve) => {
             patcher.eventTarget.addEventListener("artwork-navigate-start", async () => {
                 this.artworkDescriptor = await waitForElement("figcaption:has(h1):has(footer)");
                 this.artworkDescriptorFooter = this.artworkDescriptor.querySelector("footer");
                 this.artworkContainer = await waitForElement(`figure:has(> div > div > div > a)`);
 
-                await this.waitArtworkImageLoaded();
+                await new Promise(resolve => setTimeout(resolve, 1000));
 
                 this.artworkDescriptorFooter.insertAdjacentElement("beforebegin", this.toolbarElem);
                 this.toolbarElem.hidden = false;
@@ -338,22 +356,24 @@ class ToolbarPatch {
 
         patcher.eventTarget.addEventListener("artwork-navigate", async () => {
             await artworkNavigateStartPromise;
-            const artworkParts = this.getArtworkParts();
+            const artworkParts = this.#getArtworkParts();
             this.selectedArtworkPart = artworkParts[0];
 
-            this.updateArtworkSelectorOptions(artworkParts);
+            this.#updateArtworkSelectorOptions(artworkParts);
 
             this.artworkPartSelectorElem.append(
-                $("<option>", { text: `If there is more than one artwork, click "Show all" button, then other artworks will automatically appear here.`, value: `0:${artworkParts[0].href}`, disabled: true })[0]
+                $("<option>", { text: `If there is more than one artwork, then click "Show all" button for other artworks to automatically appear here.`, disabled: true })[0]
             );
 
             makeMutationObserver({ target: this.artworkContainer, childList: true, once: true }, async () => {
-                await this.waitMoreThanOneImageLoaded();
-                this.updateArtworkSelectorOptions(this.getArtworkParts());
+                await this.#waitMoreThanOneImageLoaded();
+                this.#updateArtworkSelectorOptions(this.#getArtworkParts());
                 this.artworkPartSelectorElem.append(
                     $("<option>", { text: "Bulk Download All Artworks", value: "bulk-download-artworks" })[0]
                 );
             });
+
+            this.#clearDownloadProgress();
         });
     }
 }
