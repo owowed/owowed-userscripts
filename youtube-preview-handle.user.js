@@ -7,11 +7,11 @@
 // @homepage     https://github.com/owowed/owowed-userscripts
 // @supportURL   https://github.com/owowed/owowed-userscripts/issues
 // @match        *://www.youtube.com/*
-// @require      https://github.com/owowed/userscript-common/raw/main/mutation-observer.js
+// @require      https://userjs.owowed.moe/common/mutation-observer.js
 // @grant        GM_addStyle
 // @license      LGPL-3.0
-// @updateURL    https://github.com/owowed/owowed-userscripts/raw/main/youtube-preview-handle.user.js
-// @downloadURL  https://github.com/owowed/owowed-userscripts/raw/main/youtube-preview-handle.user.js
+// @updateURL    https://userjs.owowed.moe/scripts/youtube-preview-handle.user.js
+// @downloadURL  https://userjs.owowed.moe/scripts/youtube-preview-handle.user.js
 // ==/UserScript==
 
 void function main() {

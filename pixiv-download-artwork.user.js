@@ -8,17 +8,17 @@
 // @supportURL   https://github.com/owowed/owowed-userscripts/issues
 // @match        *://www.pixiv.net/*/artworks/*
 // @match        *://www.pixiv.net/*
-// @require      https://github.com/owowed/userscript-common/raw/main/common.js
-// @require      https://github.com/owowed/userscript-common/raw/main/mutation-observer.js
-// @require      https://github.com/owowed/userscript-common/raw/main/wait-for-element.js
+// @require      https://userjs.owowed.moe/common/common.js
+// @require      https://userjs.owowed.moe/common/mutation-observer.js
+// @require      https://userjs.owowed.moe/common/wait-for-element.js
 // @require      https://code.jquery.com/jquery-3.6.4.slim.min.js
 // @grant        GM_addStyle
 // @grant        GM_download
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @license      LGPL-3.0
-// @updateURL    https://github.com/owowed/owowed-userscripts/raw/main/pixiv-download-artwork.user.js
-// @downloadURL  https://github.com/owowed/owowed-userscripts/raw/main/pixiv-download-artwork.user.js
+// @updateURL    https://userjs.owowed.moe/scripts/pixiv-download-artwork.user.js
+// @downloadURL  https://userjs.owowed.moe/scripts/pixiv-download-artwork.user.js
 // ==/UserScript==
 
 /*

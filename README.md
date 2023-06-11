@@ -17,10 +17,12 @@ Once you have a userscript manager installed, simply choose one of the userscrip
 - **YouTube Preview Handle** ([Install][ytph-install], [LGPL-3.0][LGPL3]): A userscript that will add a YouTube username handle on the right side of a channel name. Will work across video channel name, homepage, YouTube post, and more.
 - **Pixiv Download Artwork** ([Install][pda-install], [LGPL-3.0][LGPL3]): A userscript that adds a button, that can download the current artwork, with customizable filename.
 
-[LGPL3]: https://github.com/owowed/owowed-userscripts/raw/main/LICENSE.LGPL-3.txt
-[ytrt-install]: https://github.com/owowed/owowed-userscripts/raw/main/youtube-raw-transcript.user.js
-[ytph-install]: https://github.com/owowed/owowed-userscripts/raw/main/youtube-preview-handle.user.js
-[pda-install]: https://github.com/owowed/owowed-userscripts/raw/main/pixiv-download-artwork.user.js
+*You can view more userscripts at [https://userjs.owowed.moe/](https://userjs.owowed.moe/).*
+
+[LGPL3]: https://userjs.owowed.moe/scripts/LICENSE.LGPL-3.txt
+[ytrt-install]: https://userjs.owowed.moe/scripts/youtube-raw-transcript.user.js
+[ytph-install]: https://userjs.owowed.moe/scripts/youtube-preview-handle.user.js
+[pda-install]: https://userjs.owowed.moe/scripts/pixiv-download-artwork.user.js
 
 ## Contributing
 
